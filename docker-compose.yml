@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  web:
+    build: ./web
+    container_name: 2022BCD0033_web
+    ports:
+      - "8081:8080"  
+    depends_on:
+      - db
+      - worker
+
+  worker:
+    build: ./worker
+    container_name: 2022BCD0033_worker
+    depends_on:
+      - redis
+      - db
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=db+postgresql://myuser:mypassword@db:5432/mydatabase
+    command: ["celery", "-A", "worker", "worker", "--loglevel=info"]  
+
+  redis:
+    image: "redis:latest"
+    container_name: 2022BCD0033_redis
+    ports:
+      - "6379:6379"  
+
+  db:
+    image: "postgres:latest"
+    container_name: 2022BCD0033_db
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydatabase
+    ports:
+      - "5432:5432"  
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
